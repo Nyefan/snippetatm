@@ -1,9 +1,8 @@
-package com.nyefan.snippet.atm.cloud;
+package com.nyefan.snippet.atm.rest;
 
-import com.nyefan.snippet.atm.machine.Token;
+import com.nyefan.snippet.atm.core.Token;
 
 public class TestClient extends Client {
-
 
     public double getAccountBalance(Token token) {
         return 0;

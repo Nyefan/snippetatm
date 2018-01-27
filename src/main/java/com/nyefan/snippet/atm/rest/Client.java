@@ -1,6 +1,6 @@
-package com.nyefan.snippet.atm.cloud;
+package com.nyefan.snippet.atm.rest;
 
-import com.nyefan.snippet.atm.machine.Token;
+import com.nyefan.snippet.atm.core.Token;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,7 +12,7 @@ import java.security.PublicKey;
 public abstract class Client {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Client.class);
-    private static final KeyPair KEY_PAIR;
+    private static final KeyPair CLOUD_KEY_PAIR;
 
     static {
         //TODO: retrieve from filesystem
@@ -28,11 +28,11 @@ public abstract class Client {
         }
 
         generator.initialize(2048);
-        KEY_PAIR = generator.generateKeyPair();
+        CLOUD_KEY_PAIR = generator.generateKeyPair();
     }
 
-    public static PublicKey getPublicKey() {
-        return KEY_PAIR.getPublic();
+    public static PublicKey getCloudPublicKey() {
+        return CLOUD_KEY_PAIR.getPublic();
     }
 
     public abstract double getAccountBalance(Token token);
