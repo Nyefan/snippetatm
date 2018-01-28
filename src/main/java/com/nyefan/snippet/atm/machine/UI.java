@@ -30,7 +30,7 @@ public class UI {
         throw new UnsupportedOperationException("This is not yet implemented");
     }
 
-    public static void makeDeposit(double amout) {
+    public static void makeDeposit(double amount) {
         throw new UnsupportedOperationException("This is not yet implemented");
     }
 }

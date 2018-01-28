@@ -28,7 +28,7 @@ public final class Token {
 
     static {
         //TODO: retrieve from filesystem
-        //TODO: EC key (atms are harder to upgrade, and the signing/encrypting cost curve wrt length of key is flatter for ec than rsa)
+        //TODO: EC key (atms are harder to upgrade than servers, and the signing/encrypting cost curve wrt length of key is flatter for ec than rsa)
         KeyPairGenerator generator = null;
 
         while (generator == null) { //can't do anything without the key - just keep trying till you get it
@@ -43,10 +43,13 @@ public final class Token {
         MACHINE_KEY_PAIR = generator.generateKeyPair();
     }
 
-    public static PublicKey getCloudPublicKey() {
+    //TODO: make this a dao function
+    public static PublicKey getMachinePublicKey() {
         return MACHINE_KEY_PAIR.getPublic();
     }
 
+
+    //TODO: move all these transaction objects into a core.Transaction class
     public enum TransactionType {
         BALANCE("BALANCE"),
         DEPOSIT("DEPOSIT"),
@@ -59,7 +62,7 @@ public final class Token {
             this.type = type;
         }
 
-        public TransactionType parse(String type) {
+        public static TransactionType fromString(String type) {
             return Arrays.stream(TransactionType.values())
                     .filter(i -> i.type.equalsIgnoreCase(type))
                     .findFirst()
@@ -68,12 +71,15 @@ public final class Token {
     }
 
     public final class Pin {
-
         private String pin;
         private final static String pinClaim = "pin";
 
         public Pin(String pin) {
             this.pin = pin;
+        }
+
+        public boolean verify(String pin) {
+            return this.pin.equals(pin);
         }
     }
 
@@ -84,15 +90,76 @@ public final class Token {
         public Card(String cardNumber) {
             this.cardNumber = cardNumber;
         }
+
+        public String getCardNumber() {
+            return cardNumber;
+        }
+    }
+
+    public enum CurrencyUnit {
+        USD("USD"),
+        GBP("GBP"),
+        EUR("EUR");
+
+        private String unit;
+
+        CurrencyUnit(String unit) {
+            this.unit = unit;
+        }
+
+        public static CurrencyUnit fromString(String unit) {
+            return Arrays.stream(CurrencyUnit.values())
+                    .filter(i -> i.unit.equalsIgnoreCase(unit))
+                    .findFirst()
+                    .orElseThrow(IllegalArgumentException::new);
+        }
+    }
+
+    public final class TransactionAmount {
+        private double transactionAmount;
+        private CurrencyUnit currencyUnit;
+        private static final String transactionAmountClaim = "transactionAmount";
+        private static final String currencyUnitClaim = "currencyUnit";
+
+        public TransactionAmount(String transactionAmount, CurrencyUnit currencyUnit) {
+            this.transactionAmount = Double.parseDouble(transactionAmount);
+            this.currencyUnit = currencyUnit;
+        }
+
+        public TransactionAmount(double transactionAmount, CurrencyUnit currencyUnit) {
+            this.transactionAmount = transactionAmount;
+            this.currencyUnit = currencyUnit;
+        }
+
+        public TransactionAmount inCurrencyUnit(CurrencyUnit currencyUnit) {
+            if (this.currencyUnit.equals(currencyUnit)) {
+                return this; //operation is idempotent in this case; if anything else ever becomes mutable, this must change
+            }
+
+            throw new UnsupportedOperationException("This functionality is not yet implemented");
+        }
+
+        public double getTransactionAmount() {
+            return transactionAmount;
+        }
+
+        public CurrencyUnit getCurrencyUnit() {
+            return currencyUnit;
+        }
     }
 
     private final TransactionType transactionType;
+    private final TransactionAmount transactionAmount;
     private final Pin pin;
     private final Card card;
     private final JWEObject token;
 
-    public Token(TransactionType transactionType, Pin pin, Card card, PublicKey encryptionKey, PrivateKey signingKey) throws JOSEException {
+
+    //TODO: create a TokenBuilder
+    //TODO: don't require transactionAmount for balance queries
+    public Token(TransactionType transactionType, Pin pin, Card card, TransactionAmount transactionAmount, PublicKey encryptionKey, PrivateKey signingKey) throws JOSEException {
         this.transactionType = transactionType;
+        this.transactionAmount = transactionAmount;
         this.pin = pin;
         this.card = card;
 
@@ -103,6 +170,8 @@ public final class Token {
                 .issuer("atm-guid")
                 //TODO: this is awkward; revisit
                 .claim(TransactionType.claim, transactionType.type)
+                .claim(TransactionAmount.transactionAmountClaim, transactionAmount.transactionAmount)
+                .claim(TransactionAmount.currencyUnitClaim, transactionAmount.currencyUnit.unit)
                 .claim(Pin.pinClaim, pin.pin)
                 .claim(Card.cardNumberClaim, card.cardNumber)
                 .build();
@@ -144,12 +213,31 @@ public final class Token {
             throw new JOSEException("JWT Claims invalid");
         }
 
-        transactionType = TransactionType.valueOf(claimSet.getStringClaim(TransactionType.claim));
+        transactionType = TransactionType.fromString(claimSet.getStringClaim(TransactionType.claim));
+        transactionAmount = new TransactionAmount(claimSet.getDoubleClaim(TransactionAmount.transactionAmountClaim),
+                CurrencyUnit.fromString(claimSet.getStringClaim(TransactionAmount.currencyUnitClaim)));
         pin = new Pin(claimSet.getStringClaim(Pin.pinClaim));
         card = new Card(claimSet.getStringClaim(Card.cardNumberClaim));
     }
 
     public static Token parse(String tokenString, PublicKey verificationKey, PrivateKey decryptionKey) throws ParseException, JOSEException {
         return new Token(JWEObject.parse(tokenString), verificationKey, decryptionKey);
+    }
+
+    public TransactionType getTransactionType() {
+        return transactionType;
+    }
+
+    public TransactionAmount getTransactionAmount() {
+        return transactionAmount;
+    }
+
+    //TODO: consider security implications of returning card/pin directly in the long term
+    public Card getCard() {
+        return card;
+    }
+
+    public Pin getPin() {
+        return pin;
     }
 }
