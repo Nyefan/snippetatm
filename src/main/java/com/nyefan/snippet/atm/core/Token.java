@@ -148,4 +148,8 @@ public final class Token {
         pin = new Pin(claimSet.getStringClaim(Pin.pinClaim));
         card = new Card(claimSet.getStringClaim(Card.cardNumberClaim));
     }
+
+    public static Token parse(String tokenString, PublicKey verificationKey, PrivateKey decryptionKey) throws ParseException, JOSEException {
+        return new Token(JWEObject.parse(tokenString), verificationKey, decryptionKey);
+    }
 }
