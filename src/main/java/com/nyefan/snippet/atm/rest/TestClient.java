@@ -7,8 +7,8 @@ import java.util.Random;
 public class TestClient extends Client {
 
     private Random random = new Random();
-    double accountBalance = random.nextDouble() * 10000;
-    String pin = "asdf123";
+    private double accountBalance = random.nextDouble() * 10000;
+    private String pin = "asdf123";
 
     //TODO: String token; Token.parse(token, Token.getMachinePublicKey, CLOUD_KEY_PAIR.getPrivate())
     public double getAccountBalance(Token token) {

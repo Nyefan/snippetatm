@@ -23,31 +23,9 @@ import java.util.Date;
 public final class Token {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Client.class);
-    private static final KeyPair MACHINE_KEY_PAIR;
     private static final JWSAlgorithm jwsAlgorithm = JWSAlgorithm.RS256;
-
-    static {
-        //TODO: retrieve from filesystem
-        //TODO: EC key (atms are harder to upgrade than servers, and the signing/encrypting cost curve wrt length of key is flatter for ec than rsa)
-        KeyPairGenerator generator = null;
-
-        while (generator == null) { //can't do anything without the key - just keep trying till you get it
-            try {
-                generator = KeyPairGenerator.getInstance("RSA");
-            } catch (NoSuchAlgorithmException e) {
-                LOGGER.error(e.getMessage(), e);
-            }
-        }
-
-        generator.initialize(2048);
-        MACHINE_KEY_PAIR = generator.generateKeyPair();
-    }
-
-    //TODO: make this a dao function
-    public static PublicKey getMachinePublicKey() {
-        return MACHINE_KEY_PAIR.getPublic();
-    }
-
+    private static final JWEAlgorithm jweAlgorithm = JWEAlgorithm.RSA_OAEP_256;
+    private static final EncryptionMethod encryptionMethod = EncryptionMethod.A256GCM;
 
     //TODO: move all these transaction objects into a core.Transaction class
     public enum TransactionType {
@@ -180,7 +158,7 @@ public final class Token {
         signedJWT.sign(new RSASSASigner(signingKey));
 
         JWEObject jweObject = new JWEObject(
-                new JWEHeader.Builder(JWEAlgorithm.RSA_OAEP_256, EncryptionMethod.A256GCM)
+                new JWEHeader.Builder(jweAlgorithm, encryptionMethod)
                         .contentType("JWT")
                         .build(),
                 new Payload(signedJWT)
@@ -220,6 +198,7 @@ public final class Token {
         card = new Card(claimSet.getStringClaim(Card.cardNumberClaim));
     }
 
+    //This is to prevent users of the Token from being required to understand or be aware of JWEs
     public static Token parse(String tokenString, PublicKey verificationKey, PrivateKey decryptionKey) throws ParseException, JOSEException {
         return new Token(JWEObject.parse(tokenString), verificationKey, decryptionKey);
     }
