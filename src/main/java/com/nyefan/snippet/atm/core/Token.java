@@ -33,22 +33,22 @@ public final class Token {
         DEPOSIT("DEPOSIT"),
         WITHDRAW("WITHDRAW");
 
-        private String type;
-        private final static String claim = "transactionType";
+        private String transactionType;
+        private final static String transactionTypeClaim = "transactionType";
 
-        TransactionType(String type) {
-            this.type = type;
+        TransactionType(String transactionType) {
+            this.transactionType = transactionType;
         }
 
         public static TransactionType fromString(String type) {
             return Arrays.stream(TransactionType.values())
-                    .filter(i -> i.type.equalsIgnoreCase(type))
+                    .filter(i -> i.transactionType.equalsIgnoreCase(type))
                     .findFirst()
                     .orElseThrow(IllegalArgumentException::new);
         }
     }
 
-    public final class Pin {
+    public static final class Pin {
         private String pin;
         private final static String pinClaim = "pin";
 
@@ -61,7 +61,7 @@ public final class Token {
         }
     }
 
-    public final class Card {
+    public static final class Card {
         private String cardNumber;
         private final static String cardNumberClaim = "cardNumber";
 
@@ -79,21 +79,21 @@ public final class Token {
         GBP("GBP"),
         EUR("EUR");
 
-        private String unit;
+        private String currencyUnit;
 
-        CurrencyUnit(String unit) {
-            this.unit = unit;
+        CurrencyUnit(String currencyUnit) {
+            this.currencyUnit = currencyUnit;
         }
 
         public static CurrencyUnit fromString(String unit) {
             return Arrays.stream(CurrencyUnit.values())
-                    .filter(i -> i.unit.equalsIgnoreCase(unit))
+                    .filter(i -> i.currencyUnit.equalsIgnoreCase(unit))
                     .findFirst()
                     .orElseThrow(IllegalArgumentException::new);
         }
     }
 
-    public final class TransactionAmount {
+    public static final class TransactionAmount {
         private double transactionAmount;
         private CurrencyUnit currencyUnit;
         private static final String transactionAmountClaim = "transactionAmount";
@@ -146,10 +146,10 @@ public final class Token {
                 .notBeforeTime(Date.from(Instant.now()))
                 .expirationTime(Date.from(Instant.now().plus(15, ChronoUnit.MINUTES)))
                 .issuer("atm-guid")
-                //TODO: this is awkward; revisit
-                .claim(TransactionType.claim, transactionType.type)
+                .claim(TransactionType.transactionTypeClaim, transactionType.transactionType)
                 .claim(TransactionAmount.transactionAmountClaim, transactionAmount.transactionAmount)
-                .claim(TransactionAmount.currencyUnitClaim, transactionAmount.currencyUnit.unit)
+                //TODO: this is awkward; revisit
+                .claim(TransactionAmount.currencyUnitClaim, transactionAmount.currencyUnit.currencyUnit)
                 .claim(Pin.pinClaim, pin.pin)
                 .claim(Card.cardNumberClaim, card.cardNumber)
                 .build();
@@ -191,7 +191,7 @@ public final class Token {
             throw new JOSEException("JWT Claims invalid");
         }
 
-        transactionType = TransactionType.fromString(claimSet.getStringClaim(TransactionType.claim));
+        transactionType = TransactionType.fromString(claimSet.getStringClaim(TransactionType.transactionTypeClaim));
         transactionAmount = new TransactionAmount(claimSet.getDoubleClaim(TransactionAmount.transactionAmountClaim),
                 CurrencyUnit.fromString(claimSet.getStringClaim(TransactionAmount.currencyUnitClaim)));
         pin = new Pin(claimSet.getStringClaim(Pin.pinClaim));

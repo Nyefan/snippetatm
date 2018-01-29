@@ -1,5 +1,9 @@
 package com.nyefan.snippet.atm.machine;
 
+import com.nimbusds.jose.JOSEException;
+import com.nyefan.snippet.atm.core.Token;
+import com.nyefan.snippet.atm.rest.Client;
+import com.nyefan.snippet.atm.rest.TestClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -8,23 +12,26 @@ import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 
+//TODO: separate into UI and UIService
 public class UI {
 
-    private static Logger LOGGER = LoggerFactory.getLogger(UI.class);
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(UI.class);
     private static final KeyPair MACHINE_KEY_PAIR;
+    //TODO: read from filesystem
+    private static final Token.CurrencyUnit currencyUnit = Token.CurrencyUnit.USD;
+    //TODO: for easier testing/mocking, initialize pin and starting account balance in this constructor
+    private static final Client CLIENT = new TestClient();
 
     static {
         //TODO: retrieve from filesystem
         //TODO: EC key (atms are harder to upgrade than servers, and the signing/encrypting cost curve wrt length of key is flatter for ec than rsa)
         KeyPairGenerator generator = null;
 
-        while (generator == null) { //can't do anything without the key - just keep trying till you get it
-            try {
-                generator = KeyPairGenerator.getInstance("RSA");
-            } catch (NoSuchAlgorithmException e) {
-                LOGGER.error(e.getMessage(), e);
-            }
+        try {
+            generator = KeyPairGenerator.getInstance("RSA");
+        } catch (NoSuchAlgorithmException e) {
+            LOGGER.error(e.getMessage(), e);
+            System.exit(1); //no point in continuing if you can't get the key
         }
 
         generator.initialize(2048);
@@ -47,19 +54,36 @@ public class UI {
         }
     }
 
-    public static String requestPin() {
-        throw new UnsupportedOperationException("This is not yet implemented");
+    public static double queryAccountBalance(String cardNumber, String pin) throws JOSEException {
+        Token token = new Token(
+                Token.TransactionType.BALANCE,
+                new Token.Pin(pin),
+                new Token.Card(cardNumber),
+                new Token.TransactionAmount(0d, currencyUnit), //this is required but has no effect; will be fixed in later iteration
+                TestClient.getCloudPublicKey(),
+                MACHINE_KEY_PAIR.getPrivate());
+        return CLIENT.getAccountBalance(token);
     }
 
-    public static double queryAccountBalance() {
-        throw new UnsupportedOperationException("This is not yet implemented");
+    public static double withdrawCash(double amount, String cardNumber, String pin) throws JOSEException {
+        Token token = new Token(
+                Token.TransactionType.WITHDRAW,
+                new Token.Pin(pin),
+                new Token.Card(cardNumber),
+                new Token.TransactionAmount(amount, currencyUnit),
+                TestClient.getCloudPublicKey(),
+                MACHINE_KEY_PAIR.getPrivate());
+        return CLIENT.withdrawCash(token);
     }
 
-    public static void withdrawCash(double amount) {
-        throw new UnsupportedOperationException("This is not yet implemented");
-    }
-
-    public static void makeDeposit(double amount) {
-        throw new UnsupportedOperationException("This is not yet implemented");
+    public static double depositCash(double amount, String cardNumber, String pin) throws JOSEException {
+        Token token = new Token(
+                Token.TransactionType.DEPOSIT,
+                new Token.Pin(pin),
+                new Token.Card(cardNumber),
+                new Token.TransactionAmount(amount, currencyUnit),
+                TestClient.getCloudPublicKey(),
+                MACHINE_KEY_PAIR.getPrivate());
+        return CLIENT.depositCash(token);
     }
 }
