@@ -1,6 +1,7 @@
 package com.nyefan.snippet.atm.machine;
 
 import com.nimbusds.jose.JOSEException;
+import com.nyefan.snippet.atm.core.KeyLengthOverrider;
 import com.nyefan.snippet.atm.core.Token;
 import com.nyefan.snippet.atm.rest.Client;
 import com.nyefan.snippet.atm.rest.TestClient;
@@ -39,6 +40,9 @@ public class UI {
 
         generator.initialize(2048);
         MACHINE_KEY_PAIR = generator.generateKeyPair();
+
+        //force ClassLoader to load (and execute static block of) KeyLengthOverrider
+        new KeyLengthOverrider();
     }
 
     //TODO: make this a dao function
