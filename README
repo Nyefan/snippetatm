@@ -1,3 +1,5 @@
 mvn package
 cd target
 java -jar snippet-atm-1.0-SNAPSHOT-jar-with-dependencies.jar
+
+default pin: "asdf123"
