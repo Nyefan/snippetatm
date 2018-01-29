@@ -64,16 +64,18 @@ public class UI {
                 System.out.println("Please select an operation:\n1:\tGet Account Balance\n2:\tWithdraw Cash\n3:\tDeposit Cash");
 
                 int selectedOption = in.nextInt();
+                in.nextLine(); //clear newline which isn't consumed and would cause an empty pin without waiting for input
 
-                //
                 switch (selectedOption) {
                     case 1: //balance query
                         String balancePin = requestPin(in, System.out);
-                        queryAccountBalance(cardNumber, balancePin);
+                        double balance = queryAccountBalance(cardNumber, balancePin);
+                        System.out.format("Your current balance is %.2f\n", balance);
                         break;
                     case 2: //withdrawal
                         System.out.format("Please enter amount in %s:", currencyUnit.name());
                         double withdrawalAmount = in.nextDouble();
+                        in.nextLine();
                         String withdrawalPin = requestPin(in, System.out);
                         double remainingBalance = withdrawCash(withdrawalAmount, cardNumber, withdrawalPin);
                         try {
@@ -83,7 +85,7 @@ public class UI {
                             revertWithdrawal(withdrawalAmount, cardNumber, withdrawalPin);
                             break;
                         }
-                        System.out.format("Your remaining balance is %f.2 %s\n", remainingBalance, currencyUnit.name());
+                        System.out.format("Your remaining balance is %.2f %s\n", remainingBalance, currencyUnit.name());
                         break;
                     case 3: //deposit
                         System.out.format("Please place cash in tray (enter amount in %s):", currencyUnit.name());
@@ -106,7 +108,7 @@ public class UI {
                             }
                             break;
                         }
-                        System.out.format("Your new balance i %f.2 %s", newBalance, currencyUnit.name());
+                        System.out.format("Your new balance is %.2f %s\n", newBalance, currencyUnit.name());
                         break;
                     default:
                         System.out.println("That is not a valid option; returning to selection screen");
@@ -176,7 +178,9 @@ public class UI {
     private static double detectCashDeposit(Scanner in) throws HardwareException {
         //TODO: Hardware interface
         try {
-            return in.nextDouble();
+            double out = in.nextDouble();
+            in.nextLine();
+            return out;
         } catch (Exception e) {
             throw new HardwareException(e);
         }
