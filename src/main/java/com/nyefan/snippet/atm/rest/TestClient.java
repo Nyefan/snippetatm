@@ -46,4 +46,9 @@ public class TestClient extends Client {
         accountBalance += accountDelta;
         return accountBalance;
     }
+
+    //Under the current logic, this should never be called
+    public double revertWithdrawal(Token token) {
+        throw new UnsupportedOperationException("This functionality is not yet implemented");
+    }
 }

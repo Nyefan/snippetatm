@@ -27,7 +27,7 @@ public abstract class Client {
             }
         }
 
-        generator.initialize(2048);
+        generator.initialize(4096);
         CLOUD_KEY_PAIR = generator.generateKeyPair();
     }
 
@@ -41,4 +41,5 @@ public abstract class Client {
 
     public abstract double depositCash(Token token);
 
+    public abstract double revertWithdrawal(Token token);
 }

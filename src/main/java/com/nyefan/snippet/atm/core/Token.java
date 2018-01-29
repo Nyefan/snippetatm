@@ -135,6 +135,7 @@ public final class Token {
 
     //TODO: create a TokenBuilder
     //TODO: don't require transactionAmount for balance queries
+
     public Token(TransactionType transactionType, Pin pin, Card card, TransactionAmount transactionAmount, PublicKey encryptionKey, PrivateKey signingKey) throws JOSEException {
         this.transactionType = transactionType;
         this.transactionAmount = transactionAmount;
