@@ -100,7 +100,7 @@ public class UI {
                         double newBalance;
                         try {
                             newBalance = depositCash(depositAmount, cardNumber, depositPin);
-                        } catch (Exception e) {
+                        } catch (Exception e) {//TODO: make a typed exception that limits this behavior so it will usually fall through to the main catch below
                             LOGGER.error("Couldn't verify deposit - please contact your bank");
                             if (customerFriendly) {
                                 LOGGER.info("Provisionally refunding deposit amount of {} onto card {}", String.format("%.2f", depositAmount), cardNumber);
